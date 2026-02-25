@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jaeger.fullname" . }}
+  labels:
+    {{- include "jaeger.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "jaeger.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "jaeger.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "jaeger.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: jaeger
+          image: {{ include "jaeger.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["--config", "/etc/jaeger/config.yaml"]
+          env:
+            - name: CLICKHOUSE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaeger.clickhouseSecretName" . }}
+                  key: username
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jaeger.clickhouseSecretName" . }}
+                  key: password
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: healthcheck
+              containerPort: 13133
+              protocol: TCP
+            - name: jaeger-grpc
+              containerPort: 16685
+              protocol: TCP
+            - name: jaeger-http
+              containerPort: 16686
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /status
+              port: healthcheck
+              scheme: HTTP
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: healthcheck
+              scheme: HTTP
+            failureThreshold: 5
+            periodSeconds: 15
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: healthcheck
+              scheme: HTTP
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 1
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/jaeger/config.yaml
+              subPath: config.yaml
+        {{- if .Values.clickhouse.tls }}
+        - name: socat
+          image: {{ include "jaeger.socat.image" . }}
+          imagePullPolicy: {{ .Values.clickhouse.socat.image.pullPolicy }}
+          # Forward plain HTTP on localhost:8123 to the remote ClickHouse HTTPS endpoint.
+          # Jaeger's ClickHouse storage backend does not support TLS natively, so this
+          # sidecar acts as a transparent HTTP→HTTPS proxy within the pod network.
+          args:
+            - TCP-LISTEN:8123,fork,reuseaddr
+            - OPENSSL:{{ required "clickhouse.host must be set" .Values.clickhouse.host }}:{{ .Values.clickhouse.port }},verify=1
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          {{- with .Values.clickhouse.socat.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "jaeger.fullname" . }}-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
