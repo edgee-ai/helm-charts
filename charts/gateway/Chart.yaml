@@ -13,3 +13,6 @@ keywords:
 home: https://edgee.ai
 sources:
   - https://github.com/edgee-ai/gateway
+maintainers:
+  - name: KokaKiwi
+    email: julianne@edgee.ai
