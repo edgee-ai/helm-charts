@@ -1,0 +1,155 @@
+replicaCount: 1
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: ghcr.io/edgee-ai/gateway
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# ghcr.io/edgee-ai/gateway is a private registry. Configure pull credentials using
+# one of the three options below:
+#
+# Option A — let the chart create a docker-registry Secret from inline credentials:
+#   imageCredentials:
+#     create: true
+#     username: <github-username>
+#     password: <ghcr-pat-with-read:packages-scope>
+#
+# Option B — reference a pre-existing docker-registry Secret:
+#   imageCredentials:
+#     existingSecret: my-ghcr-pull-secret
+#
+# Option C — pass pull secret names directly via imagePullSecrets (standard Helm):
+#   imagePullSecrets:
+#     - name: my-ghcr-pull-secret
+imageCredentials:
+  create: false
+  registry: ghcr.io
+  username: ""
+  password: ""
+  # If set, used as the pull secret directly (skips creation even if create: true).
+  existingSecret: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  # Specifies whether a service account should be created.
+  create: true
+  # Annotations to add to the service account.
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+terminationGracePeriodSeconds: 30
+
+service:
+  type: ClusterIP
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: gateway.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ── Gateway configuration ────────────────────────────────────────────────────
+
+gateway:
+  # Deployment environment identifier. Sets the ENV env var.
+  # Accepted values: prod, staging, dev
+  env: prod
+
+  # ── gateway.toml config file ─────────────────────────────────────────────
+  # In air-gapped mode (apiSync.enabled: false) this file is required.
+  # In connected mode (apiSync.enabled: true) it is an optional bootstrap.
+  #
+  # Option A — inline TOML content (chart creates a Secret with key "gateway.toml"):
+  #   gateway:
+  #     configContent: |
+  #       [api_keys."sk-your-gateway-key-here"]
+  #       id = "key-001"
+  #       ...
+  #
+  # Option B — reference a pre-existing Secret.
+  # The Secret must have the key "gateway.toml".
+  #   gateway:
+  #     existingConfigSecret: my-gateway-config-secret
+  configContent: ""
+  existingConfigSecret: ""
+
+  # ── Runtime credentials ───────────────────────────────────────────────────
+  # Option A — inline values (chart creates a Secret):
+  #   gateway:
+  #     licenseKey: "<jwt-issued-by-edgee>"
+  #     signatureKey: "<org-specific-signing-key>"
+  #     providerKeysContent: |
+  #       openai    = "sk-proj-..."
+  #       anthropic = "sk-ant-..."
+  licenseKey: ""             # LICENSE_KEY env var. Required in all non-dev builds.
+  signatureKey: ""           # EDGEE_SIGNATURE_KEY env var. Required in production.
+  providerKeysContent: ""    # Contents of provider_keys.toml (flat TOML, no section header).
+
+  # Option B — reference a pre-existing Secret.
+  # Must have keys: LICENSE_KEY, EDGEE_SIGNATURE_KEY.
+  # Set providerKeysEnabled: true if the Secret also has a provider_keys.toml key to mount.
+  existingSecret: ""
+  providerKeysEnabled: false
+
+  # ── Connected mode: periodic config sync from the Edgee API ──────────────
+  # When enabled, the gateway fetches its full config from the Edgee API on boot
+  # and at every sync interval. Requires licenseKey (or existingSecret) to be set.
+  # In this mode, configContent becomes an optional bootstrap only.
+  apiSync:
+    enabled: false
+    intervalSecs: 300
+
+  # ── OTLP telemetry ────────────────────────────────────────────────────────
+  telemetry:
+    enabled: false
+    otlpEndpoint: "http://localhost:4318"
+
+  # ── Extra environment variables ───────────────────────────────────────────
+  extraEnv: {}
+  # RUST_LOG: info
