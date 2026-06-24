@@ -13,5 +13,5 @@ home: https://www.jaegertracing.io/
 sources:
   - https://github.com/jaegertracing/jaeger
 maintainers:
-  - name: Julianne Hervier
+  - name: KokaKiwi
     email: julianne@edgee.ai
