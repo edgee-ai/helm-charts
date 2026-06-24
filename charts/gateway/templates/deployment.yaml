@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gateway.fullname" . }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gateway.selectorLabels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- $pullSecrets := include "gateway.imagePullSecrets" . }}
+      {{- if $pullSecrets }}
+      imagePullSecrets:
+        {{- $pullSecrets | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gateway.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: gateway
+          image: {{ include "gateway.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: LISTEN_ADDR
+              value: "0.0.0.0:8080"
+            - name: ENV
+              value: {{ .Values.gateway.env | quote }}
+            {{- if include "gateway.configMounted" . }}
+            - name: CONFIG_FILE
+              value: "/etc/edgee/gateway.toml"
+            {{- end }}
+            {{- if include "gateway.providerKeysMounted" . }}
+            - name: PROVIDER_KEYS_FILE
+              value: "/etc/edgee/provider_keys.toml"
+            {{- end }}
+            - name: LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gateway.secretName" . }}
+                  key: LICENSE_KEY
+            - name: EDGEE_SIGNATURE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gateway.secretName" . }}
+                  key: EDGEE_SIGNATURE_KEY
+                  optional: true
+            - name: EDGEE_API_SYNC
+              value: {{ .Values.gateway.apiSync.enabled | toString | quote }}
+            {{- if .Values.gateway.apiSync.enabled }}
+            - name: SYNC_INTERVAL_SECS
+              value: {{ .Values.gateway.apiSync.intervalSecs | toString | quote }}
+            {{- end }}
+            - name: TELEMETRY_ENABLED
+              value: {{ .Values.gateway.telemetry.enabled | toString | quote }}
+            {{- if .Values.gateway.telemetry.enabled }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.gateway.telemetry.otlpEndpoint | quote }}
+            {{- end }}
+            {{- range $key, $val := .Values.gateway.extraEnv }}
+            - name: {{ $key | quote }}
+              value: {{ $val | quote }}
+            {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /status
+              port: http
+              scheme: HTTP
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: http
+              scheme: HTTP
+            failureThreshold: 5
+            periodSeconds: 15
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: http
+              scheme: HTTP
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 1
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if include "gateway.configMounted" . }}
+            - name: gateway-config
+              mountPath: /etc/edgee/gateway.toml
+              subPath: gateway.toml
+              readOnly: true
+            {{- end }}
+            {{- if include "gateway.providerKeysMounted" . }}
+            - name: gateway-provider-keys
+              mountPath: /etc/edgee/provider_keys.toml
+              subPath: provider_keys.toml
+              readOnly: true
+            {{- end }}
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        {{- if include "gateway.configMounted" . }}
+        - name: gateway-config
+          secret:
+            secretName: {{ include "gateway.configSecretName" . }}
+        {{- end }}
+        {{- if include "gateway.providerKeysMounted" . }}
+        - name: gateway-provider-keys
+          secret:
+            secretName: {{ include "gateway.secretName" . }}
+            items:
+              - key: provider_keys.toml
+                path: provider_keys.toml
+        {{- end }}
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

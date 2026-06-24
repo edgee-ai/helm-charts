@@ -1,0 +1,29 @@
+1. Edgee OnPrem Gateway is accessible at:
+
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[?(@.name=='http')].nodePort}" services {{ include "gateway.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "Gateway: http://$NODE_IP:$NODE_PORT"
+
+{{- else if contains "LoadBalancer" .Values.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "gateway.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "Gateway: http://$SERVICE_IP:8080"
+
+{{- else }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "gateway.fullname" . }} 8080:8080
+  echo "Gateway: http://localhost:8080"
+{{- end }}
+
+2. Health check:
+   curl http://<gateway-host>/status
+
+3. OpenAI-compatible API endpoint:
+   {{ include "gateway.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:8080
+
+4. Deployment mode: {{ if .Values.gateway.apiSync.enabled }}connected (syncing from Edgee API every {{ .Values.gateway.apiSync.intervalSecs }}s){{ else }}air-gapped (config loaded from local files){{ end }}
