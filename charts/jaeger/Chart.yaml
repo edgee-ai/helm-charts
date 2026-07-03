@@ -1,0 +1,17 @@
+apiVersion: v2
+name: jaeger
+version: 0.1.2
+type: application
+appVersion: "2.16.0"
+description: A Helm chart for deploying Jaeger v2 distributed tracing backend
+keywords:
+  - jaeger
+  - tracing
+  - opentelemetry
+  - observability
+home: https://www.jaegertracing.io/
+sources:
+  - https://github.com/jaegertracing/jaeger
+maintainers:
+  - name: KokaKiwi
+    email: julianne@edgee.ai
