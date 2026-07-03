@@ -6,7 +6,6 @@ A Helm chart for deploying the [Edgee OnPrem AI Gateway](https://github.com/edge
 
 - Kubernetes 1.24+
 - Helm 3.8+
-- A read access token for the private `ghcr.io/edgee-ai/gateway` image (or your own mirror)
 - A license key and signature key (`gateway.licenseKey` / `gateway.signatureKey`), available from the Edgee Console under **Org settings → On-Premise**
 
 ## Installing the chart
@@ -61,7 +60,7 @@ gateway:
 
 ## Image pull credentials
 
-`ghcr.io/edgee-ai/gateway` is a private registry. Pick one:
+The default image (`ghcr.io/edgee-ai/gateway`) is public — no pull credentials needed. For a self-hosted private mirror, pick one:
 
 - **Inline credentials** — the chart creates the pull secret for you:
   ```yaml
