@@ -77,6 +77,14 @@ spec:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.gateway.telemetry.otlpEndpoint | quote }}
             {{- end }}
+            {{- if .Values.gateway.usage.otlpEndpoint }}
+            - name: USAGE_OTLP_ENDPOINT
+              value: {{ .Values.gateway.usage.otlpEndpoint | quote }}
+            {{- end }}
+            {{- if .Values.gateway.usage.otlpHeaders }}
+            - name: USAGE_OTLP_HEADERS
+              value: {{ .Values.gateway.usage.otlpHeaders | quote }}
+            {{- end }}
             {{- range $key, $val := .Values.gateway.extraEnv }}
             - name: {{ $key | quote }}
               value: {{ $val | quote }}
