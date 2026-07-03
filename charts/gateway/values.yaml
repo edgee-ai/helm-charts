@@ -143,12 +143,22 @@ gateway:
   # In this mode, configContent becomes an optional bootstrap only.
   apiSync:
     enabled: false
-    intervalSecs: 300
+    intervalSecs: 15
 
   # ── OTLP telemetry ────────────────────────────────────────────────────────
   telemetry:
     enabled: false
     otlpEndpoint: "http://localhost:4318"
+
+  # ── Usage OTLP export ─────────────────────────────────────────────────────
+  # Exports usage logs via OTLP. If unset and apiSync.enabled + licenseKey are
+  # both set, the gateway auto-defaults to https://onprem-log.edgee.ai/v1/logs
+  # with an Authorization: Bearer <licenseKey> header (connected mode). Set
+  # otlpEndpoint to override with a self-hosted collector (air-gapped mode).
+  usage:
+    otlpEndpoint: ""
+    # Extra headers for the usage OTLP endpoint, format "k1=v1,k2=v2".
+    otlpHeaders: ""
 
   # ── Extra environment variables ───────────────────────────────────────────
   extraEnv: {}
