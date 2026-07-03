@@ -1,4 +1,0 @@
-clickhouse:
-  host: "clickhouse.ci.local"
-  username: "ci"
-  password: "ci"
