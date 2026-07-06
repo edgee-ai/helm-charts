@@ -52,6 +52,8 @@ serviceAccount:
 
 podAnnotations: {}
 
+podLabels: {}
+
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65534
