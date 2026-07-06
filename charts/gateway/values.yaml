@@ -15,8 +15,9 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-# ghcr.io/edgee-ai/gateway is a private registry. Configure pull credentials using
-# one of the three options below:
+# ghcr.io/edgee-ai/gateway is public — no pull credentials are required by default.
+# For a self-hosted private mirror, configure pull credentials using one of the
+# three options below:
 #
 # Option A — let the chart create a docker-registry Secret from inline credentials:
 #   imageCredentials:
