@@ -115,6 +115,7 @@ The same applies to the `gateway.toml` config file via `gateway.existingConfigSe
 | `serviceAccount.annotations` | `{}` | ServiceAccount annotations |
 | `serviceAccount.name` | `""` | ServiceAccount name; generated from the fullname if unset |
 | `podAnnotations` | `{}` | Extra pod annotations |
+| `podLabels` | `{}` | Extra pod labels |
 | `podSecurityContext` | `runAsNonRoot: true, runAsUser: 65534, runAsGroup: 65534` | Pod-level security context |
 | `containerSecurityContext` | `allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, drop: [ALL]` | Container-level security context |
 | `resources.requests.cpu` | `250m` | CPU request |
