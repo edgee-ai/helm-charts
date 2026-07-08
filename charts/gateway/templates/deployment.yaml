@@ -88,6 +88,10 @@ spec:
             - name: USAGE_OTLP_HEADERS
               value: {{ .Values.gateway.usage.otlpHeaders | quote }}
             {{- end }}
+            {{- if .Values.gateway.usage.otlpEndpoint }}
+            - name: USAGE_OTLP_USE_LICENSE_AUTH
+              value: {{ .Values.gateway.usage.useLicenseAuth | toString | quote }}
+            {{- end }}
             {{- range $key, $val := .Values.gateway.extraEnv }}
             - name: {{ $key | quote }}
               value: {{ $val | quote }}
