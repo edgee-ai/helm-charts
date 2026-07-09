@@ -144,8 +144,9 @@ The same applies to the `gateway.toml` config file via `gateway.existingConfigSe
 | `gateway.apiSync.intervalSecs` | `15` | Sync poll interval in seconds (connected mode only) |
 | `gateway.telemetry.enabled` | `false` | Enable OTLP trace export |
 | `gateway.telemetry.otlpEndpoint` | `http://localhost:4318` | OTLP collector endpoint for traces |
-| `gateway.usage.otlpEndpoint` | `""` | OTLP endpoint for usage logs. If unset and `apiSync.enabled` + `licenseKey` are both set, defaults to `https://onprem-log.edgee.ai/v1/logs` with an `Authorization: Bearer <licenseKey>` header. Set to override with a self-hosted collector |
+| `gateway.usage.otlpEndpoint` | `""` | OTLP endpoint for usage logs. If unset and `apiSync.enabled` + `licenseKey` are both set, defaults to `https://onprem-logs.edgee.ai/v1/logs` with an `Authorization: Bearer <licenseKey>` header. Set to override with a self-hosted collector |
 | `gateway.usage.otlpHeaders` | `""` | Extra headers for the usage OTLP endpoint, format `k1=v1,k2=v2` |
+| `gateway.usage.useLicenseAuth` | `true` | Send the `Authorization: Bearer <licenseKey>` header to a custom `otlpEndpoint`. Ignored (always on) against the default endpoint. Set `false` if your own collector doesn't expect it |
 | `gateway.extraEnv` | `{}` | Arbitrary extra environment variables (e.g. `RUST_LOG: info`) |
 
 ## Health checks

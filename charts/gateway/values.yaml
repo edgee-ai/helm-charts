@@ -155,13 +155,18 @@ gateway:
 
   # ── Usage OTLP export ─────────────────────────────────────────────────────
   # Exports usage logs via OTLP. If unset and apiSync.enabled + licenseKey are
-  # both set, the gateway auto-defaults to https://onprem-log.edgee.ai/v1/logs
+  # both set, the gateway auto-defaults to https://onprem-logs.edgee.ai/v1/logs
   # with an Authorization: Bearer <licenseKey> header (connected mode). Set
   # otlpEndpoint to override with a self-hosted collector (air-gapped mode).
   usage:
     otlpEndpoint: ""
     # Extra headers for the usage OTLP endpoint, format "k1=v1,k2=v2".
     otlpHeaders: ""
+    # Whether the Authorization: Bearer <licenseKey> header is still sent when
+    # otlpEndpoint overrides the default collector. Only relevant when
+    # otlpEndpoint is set — the default endpoint always receives it. Set to
+    # false if your own collector doesn't expect the header.
+    useLicenseAuth: true
 
   # ── Extra environment variables ───────────────────────────────────────────
   extraEnv: {}
