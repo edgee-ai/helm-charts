@@ -26,8 +26,8 @@ helm uninstall my-gateway
 
 The gateway runs in one of two modes, controlled by `gateway.apiSync.enabled`:
 
-- **Air-gapped** (default) — all config is loaded from local files. `gateway.configContent` (or `gateway.existingConfigSecret`) is required. Only LLM provider endpoints are contacted, never the Edgee API.
-- **Connected** — set `gateway.apiSync.enabled: true` to have the gateway pull its full config (models, API keys, provider credentials) from the Edgee API on boot and every `gateway.apiSync.intervalSecs` seconds. `gateway.configContent` becomes an optional bootstrap only. Requires `gateway.licenseKey`.
+- **Connected** (default) — the gateway pulls its full config (models, API keys, provider credentials) from the Edgee API on boot and every `gateway.apiSync.intervalSecs` seconds. `gateway.configContent` becomes an optional bootstrap only. Requires `gateway.licenseKey`.
+- **Air-gapped** — set `gateway.apiSync.enabled: false` to opt out. All config is loaded from local files. `gateway.configContent` (or `gateway.existingConfigSecret`) is required. Only LLM provider endpoints are contacted, never the Edgee API.
 
 ### Air-gapped example
 
@@ -35,6 +35,8 @@ The gateway runs in one of two modes, controlled by `gateway.apiSync.enabled`:
 gateway:
   licenseKey: "<jwt-issued-by-edgee>"
   signatureKey: "<org-specific-signing-key>"
+  apiSync:
+    enabled: false
   providerKeysContent: |
     openai    = "sk-proj-..."
     anthropic = "sk-ant-..."
@@ -54,8 +56,6 @@ gateway:
 gateway:
   licenseKey: "<jwt-issued-by-edgee>"
   signatureKey: "<org-specific-signing-key>"
-  apiSync:
-    enabled: true
 ```
 
 ## Image pull credentials
@@ -140,7 +140,7 @@ The same applies to the `gateway.toml` config file via `gateway.existingConfigSe
 | `gateway.providerKeysContent` | `""` | Contents of `provider_keys.toml` (flat TOML, no section header) |
 | `gateway.existingSecret` | `""` | Reference a pre-existing Secret (keys `LICENSE_KEY`, `EDGEE_SIGNATURE_KEY`) instead of the above |
 | `gateway.providerKeysEnabled` | `false` | Set when `existingSecret` also carries a `provider_keys.toml` key to mount |
-| `gateway.apiSync.enabled` | `false` | Enable connected mode (periodic config sync from the Edgee API) |
+| `gateway.apiSync.enabled` | `true` | Connected mode (periodic config sync from the Edgee API). Set to `false` to opt out into air-gapped mode |
 | `gateway.apiSync.intervalSecs` | `15` | Sync poll interval in seconds (connected mode only) |
 | `gateway.telemetry.enabled` | `false` | Enable OTLP trace export |
 | `gateway.telemetry.otlpEndpoint` | `http://localhost:4318` | OTLP collector endpoint for traces |
