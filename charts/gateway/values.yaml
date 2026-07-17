@@ -141,11 +141,12 @@ gateway:
   providerKeysEnabled: false
 
   # ── Connected mode: periodic config sync from the Edgee API ──────────────
-  # When enabled, the gateway fetches its full config from the Edgee API on boot
-  # and at every sync interval. Requires licenseKey (or existingSecret) to be set.
-  # In this mode, configContent becomes an optional bootstrap only.
+  # Enabled by default. The gateway fetches its full config from the Edgee API
+  # on boot and at every sync interval. Requires licenseKey (or existingSecret)
+  # to be set. In this mode, configContent becomes an optional bootstrap only.
+  # Set enabled: false to opt out into air-gapped mode.
   apiSync:
-    enabled: false
+    enabled: true
     intervalSecs: 15
 
   # ── OTLP telemetry ────────────────────────────────────────────────────────
