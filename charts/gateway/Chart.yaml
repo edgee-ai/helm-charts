@@ -1,8 +1,8 @@
 apiVersion: v2
 name: gateway
-version: 0.8.1
+version: 0.9.1
 type: application
-appVersion: "1.12.1"
+appVersion: "1.12.2"
 description: A Helm chart for deploying the Edgee OnPrem AI Gateway
 keywords:
   - edgee
