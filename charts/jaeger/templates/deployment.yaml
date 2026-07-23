@@ -38,7 +38,10 @@ spec:
         - name: jaeger
           image: {{ include "jaeger.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: ["--config", "/etc/jaeger/config.yaml"]
+          args:
+            - --config
+            - /etc/jaeger/config.yaml
+            - --feature-gates=storage.clickhouse
           env:
             - name: CLICKHOUSE_USERNAME
               valueFrom:
