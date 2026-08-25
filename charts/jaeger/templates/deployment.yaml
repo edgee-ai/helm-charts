@@ -98,27 +98,6 @@ spec:
             - name: config
               mountPath: /etc/jaeger/config.yaml
               subPath: config.yaml
-        {{- if .Values.clickhouse.tls }}
-        - name: socat
-          image: {{ include "jaeger.socat.image" . }}
-          imagePullPolicy: {{ .Values.clickhouse.socat.image.pullPolicy }}
-          # Forward plain HTTP on localhost:8123 to the remote ClickHouse HTTPS endpoint.
-          # Jaeger's ClickHouse storage backend does not support TLS natively, so this
-          # sidecar acts as a transparent HTTP→HTTPS proxy within the pod network.
-          args:
-            - TCP-LISTEN:8123,fork,reuseaddr
-            - OPENSSL:{{ required "clickhouse.host must be set" .Values.clickhouse.host }}:{{ .Values.clickhouse.port }},verify=1
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
-          {{- with .Values.clickhouse.socat.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-        {{- end }}
       volumes:
         - name: config
           configMap:

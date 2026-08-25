@@ -1,6 +1,6 @@
 # jaeger
 
-Helm chart for [Jaeger v2](https://www.jaegertracing.io/) — deployed in **query-only mode** as a trace UI. Traces are written directly to ClickHouse by external systems; this chart only runs the Jaeger query service on top of a remote ClickHouse database over HTTPS, bridged by a `socat` sidecar since the Jaeger ClickHouse storage backend does not yet support TLS natively.
+Helm chart for [Jaeger v2](https://www.jaegertracing.io/) — deployed in **query-only mode** as a trace UI. Traces are written directly to ClickHouse by external systems; this chart only runs the Jaeger query service on top of a remote ClickHouse database, connecting directly over TLS using Jaeger's native ClickHouse TLS support.
 
 ## Architecture
 
@@ -8,15 +8,14 @@ Helm chart for [Jaeger v2](https://www.jaegertracing.io/) — deployed in **quer
 [user / grafana]
   HTTP :16686 / gRPC :16685
         ↓
-[jaeger container]  ←→  localhost:8123 (plain HTTP)
-                                ↓
-                        [socat sidecar]
-                    TCP-LISTEN:8123 → OPENSSL:<host>:<port>
-                                ↓
-                   [remote ClickHouse HTTPS]
+[jaeger container]
+        ↓
+  TLS (http or native protocol)
+        ↓
+[remote ClickHouse]
 ```
 
-Jaeger runs in query-only mode — it does **not** receive or ingest traces. The `socat` sidecar runs inside the same pod and acts as a transparent HTTP→HTTPS proxy on `localhost:8123`. Jaeger's ClickHouse backend is pointed at that local address using the `http` protocol. TLS termination and certificate verification happen inside socat.
+Jaeger runs in query-only mode — it does **not** receive or ingest traces. It connects directly to the remote ClickHouse instance using its native `clickhouse` storage exporter, over either the `http` or `native` wire protocol. When `clickhouse.tls` is enabled, TLS termination and certificate verification happen inside the exporter itself — no sidecar is involved.
 
 ## Prerequisites
 
@@ -133,15 +132,14 @@ Qovery will provision an ingress, domain, and TLS certificate automatically.
 | `service.type` | Kubernetes Service type | `ClusterIP` |
 | `service.annotations` | Annotations on the Service | `{}` |
 | `clickhouse.host` | **Required.** Remote ClickHouse hostname (no scheme) | `""` |
-| `clickhouse.port` | Remote ClickHouse HTTPS port | `8443` |
+| `clickhouse.port` | Remote ClickHouse port | `8123` |
 | `clickhouse.database` | ClickHouse database name | `jaeger` |
+| `clickhouse.protocol` | ClickHouse wire protocol: `http` or `native` | `http` |
+| `clickhouse.tls` | Connect to ClickHouse over TLS, using Jaeger's native ClickHouse TLS support | `false` |
+| `clickhouse.tlsInsecureSkipVerify` | Skip TLS certificate verification. Ignored when `clickhouse.tls` is false | `false` |
 | `clickhouse.username` | ClickHouse username. Chart creates a Secret when set (use `qovery.env.*` on Qovery) | `""` |
 | `clickhouse.password` | ClickHouse password. Chart creates a Secret when set (use `qovery.env.*` on Qovery) | `""` |
 | `clickhouse.existingSecret` | Name of a pre-existing Secret with keys `username` and `password`. Takes precedence over `username`/`password` | `""` |
-| `clickhouse.socat.image.repository` | socat sidecar image repository | `docker.io/alpine/socat` |
-| `clickhouse.socat.image.tag` | socat sidecar image tag | `latest` |
-| `clickhouse.socat.image.pullPolicy` | socat sidecar image pull policy | `IfNotPresent` |
-| `clickhouse.socat.resources` | CPU/memory requests and limits for the socat sidecar | see `values.yaml` |
 | `config` | Full Jaeger/OTel Collector configuration. Overriding this replaces the entire config | see `values.yaml` |
 
 ## Ports

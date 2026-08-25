@@ -65,14 +65,23 @@ clickhouse:
   # ClickHouse database name.
   database: jaeger
 
-  # Set to true when ClickHouse is exposed over TLS (HTTPS/native-TLS).
-  # When enabled, a socat sidecar is injected into the pod to bridge plain
-  # HTTP on localhost:8123 → TLS towards clickhouse.host:clickhouse.port.
-  # Jaeger's ClickHouse storage plugin does not support TLS natively, so the
-  # sidecar acts as a transparent in-pod proxy.
-  # When disabled, Jaeger connects directly to clickhouse.host:clickhouse.port
-  # using plain HTTP — no socat sidecar is deployed.
+  # ClickHouse wire protocol Jaeger uses to connect. One of "http" or "native".
+  # "http" talks HTTP(S) to clickhouse.port (typically 8123/8443).
+  # "native" talks the ClickHouse native TCP protocol (typically 9000/9440),
+  # which is more efficient but requires clickhouse.port to point at the
+  # native port instead.
+  protocol: "http"
+
+  # Set to true when ClickHouse is exposed over TLS (HTTPS for "http",
+  # TLS-wrapped native for "native"). Jaeger connects to ClickHouse directly
+  # over TLS using its native ClickHouse exporter support — no sidecar
+  # involved.
   tls: false
+
+  # Skip TLS certificate verification. Only use for self-signed/internal
+  # certs — full verification against the system trust store is strongly
+  # preferred. Ignored when clickhouse.tls is false.
+  tlsInsecureSkipVerify: false
 
   # Credentials — choose one of the two options below:
   #
@@ -89,20 +98,6 @@ clickhouse:
   # The Secret must have keys "username" and "password".
   # When set, takes precedence over username/password above.
   existingSecret: ""
-
-  # socat sidecar that bridges local plain HTTP → remote HTTPS.
-  # Only used when clickhouse.tls is true.
-  socat:
-    image:
-      repository: docker.io/alpine/socat
-      tag: latest
-      pullPolicy: IfNotPresent
-    resources:
-      requests:
-        cpu: 10m
-        memory: 16Mi
-      limits:
-        memory: 32Mi
 
 # ── Jaeger / OTel Collector configuration ────────────────────────────────────
 #

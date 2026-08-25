@@ -69,13 +69,6 @@ Image reference (repository:tag).
 {{- end }}
 
 {{/*
-socat sidecar image reference.
-*/}}
-{{- define "jaeger.socat.image" -}}
-{{- printf "%s:%s" .Values.clickhouse.socat.image.repository .Values.clickhouse.socat.image.tag }}
-{{- end }}
-
-{{/*
 Name of the Secret holding ClickHouse credentials.
 Uses existingSecret when set; otherwise falls back to the chart-managed Secret.
 */}}
@@ -89,16 +82,9 @@ Uses existingSecret when set; otherwise falls back to the chart-managed Secret.
 
 {{/*
 ClickHouse address Jaeger should connect to.
-When TLS is enabled the socat sidecar listens on localhost:8123 and forwards
-to the real endpoint, so Jaeger always uses plain HTTP on localhost:8123.
-When TLS is disabled Jaeger connects directly.
 */}}
 {{- define "jaeger.clickhouseAddress" -}}
-{{- if .Values.clickhouse.tls -}}
-localhost:8123
-{{- else -}}
 {{- printf "%s:%v" (required "clickhouse.host must be set" .Values.clickhouse.host) .Values.clickhouse.port }}
-{{- end -}}
 {{- end }}
 
 {{/*
@@ -106,6 +92,20 @@ Build the full Jaeger / OTel Collector config dict, then deep-merge
 .Values.extraConfig on top so users can override or extend anything.
 */}}
 {{- define "jaeger.config" -}}
+{{- $clickhouseBackend := dict
+  "protocol" .Values.clickhouse.protocol
+  "addresses" (list (include "jaeger.clickhouseAddress" .))
+  "database" .Values.clickhouse.database
+  "auth" (dict
+    "basic" (dict
+      "username" "${env:CLICKHOUSE_USERNAME}"
+      "password" "${env:CLICKHOUSE_PASSWORD}"
+    )
+  )
+-}}
+{{- if .Values.clickhouse.tls }}
+{{- $clickhouseBackend = merge $clickhouseBackend (dict "tls" (dict "insecure_skip_verify" .Values.clickhouse.tlsInsecureSkipVerify)) }}
+{{- end }}
 {{- $config := dict
   "extensions" (dict
     "healthcheckv2" (dict
@@ -115,17 +115,7 @@ Build the full Jaeger / OTel Collector config dict, then deep-merge
     "jaeger_storage" (dict
       "backends" (dict
         "clickhouse" (dict
-          "clickhouse" (dict
-            "protocol" "http"
-            "addresses" (list (include "jaeger.clickhouseAddress" .))
-            "database" .Values.clickhouse.database
-            "auth" (dict
-              "basic" (dict
-                "username" "${env:CLICKHOUSE_USERNAME}"
-                "password" "${env:CLICKHOUSE_PASSWORD}"
-              )
-            )
-          )
+          "clickhouse" $clickhouseBackend
         )
       )
     )
