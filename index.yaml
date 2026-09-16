@@ -2,6 +2,28 @@ apiVersion: v1
 entries:
   gateway:
   - apiVersion: v2
+    appVersion: 1.30.1
+    created: "2026-09-16T13:39:42.733442568Z"
+    description: A Helm chart for deploying the Edgee OnPrem AI Gateway
+    digest: 0f54b354f86e2797cf1a52a50d2c53f12554902396cdc4a0a6e460791155b639
+    home: https://edgee.ai
+    keywords:
+    - edgee
+    - gateway
+    - llm
+    - ai
+    - openai
+    maintainers:
+    - email: julianne@edgee.ai
+      name: KokaKiwi
+    name: gateway
+    sources:
+    - https://github.com/edgee-ai/gateway
+    type: application
+    urls:
+    - https://github.com/edgee-ai/helm-charts/releases/download/gateway-0.29.0/gateway-0.29.0.tgz
+    version: 0.29.0
+  - apiVersion: v2
     appVersion: 1.27.0
     created: "2026-09-10T14:46:05.807890134Z"
     description: A Helm chart for deploying the Edgee OnPrem AI Gateway
@@ -661,4 +683,4 @@ entries:
     urls:
     - https://github.com/edgee-ai/helm-charts/releases/download/gateway-0.1.0/gateway-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-10T14:46:05.808290847Z"
+generated: "2026-09-16T13:39:42.733531652Z"
